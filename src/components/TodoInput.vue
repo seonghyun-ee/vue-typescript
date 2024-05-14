@@ -26,7 +26,7 @@ export default Vue.extend({
       this.$emit("input", eventTarget.value);
     },
     addTodo() {
-      console.log("Add");
+      // console.log("Add");
       this.$emit("add");
     },
   },

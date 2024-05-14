@@ -4,7 +4,14 @@
     <todo-input :item="todoText" @input="updateTodoText" @add="addTodoItem" />
     <div>
       <ul>
-        <todo-list-item />
+        <todo-list-item
+          v-for="(todoItem, index) in todoItems"
+          :index="index"
+          :key="index"
+          :todoItem="todoItem"
+          @remove="removeTodoItem"
+          @toggle="toggleTodoItem"
+        />
       </ul>
     </div>
   </div>
@@ -17,6 +24,10 @@ import TodoListItem from "./components/TodoListItem.vue";
 
 const STORAGE_KEY = "vue-todo-ts-v1";
 const storage = {
+  save(todoItems: Todo[]) {
+    const parsed = JSON.stringify(todoItems);
+    localStorage.setItem(STORAGE_KEY, parsed);
+  },
   fetch() {
     const todoItems = localStorage.getItem(STORAGE_KEY) || "[]";
     const result = JSON.parse(todoItems);
@@ -24,12 +35,17 @@ const storage = {
   },
 };
 
+export interface Todo {
+  title: string;
+  done: boolean;
+}
+
 export default Vue.extend({
   components: { TodoInput, TodoListItem },
   data() {
     return {
       todoText: "",
-      todoItems: [],
+      todoItems: [] as Todo[],
     };
   },
   methods: {
@@ -38,18 +54,39 @@ export default Vue.extend({
     },
     addTodoItem() {
       const value = this.todoText;
-      localStorage.setItem(value, value);
+      if (!value) {
+        return;
+      }
+      // localStorage.setItem(value, value);
+      this.todoItems.push({ title: value, done: false });
+      storage.save(this.todoItems);
       this.initTodoText();
     },
     initTodoText() {
       this.todoText = "";
     },
     fetchTodoItems() {
-      this.todoItems = storage.fetch();
+      this.todoItems = storage.fetch().sort((a: Todo, b: Todo) => {
+        if (a.title < b.title) return -1;
+        if (a.title > b.title) return 1;
+        return 0;
+      });
+    },
+    removeTodoItem(index: number) {
+      console.log("remove", index);
+      this.todoItems.splice(index, 1);
+      storage.save(this.todoItems);
+    },
+    toggleTodoItem(todoItem: Todo, index: number) {
+      this.todoItems.splice(index, 1, {
+        ...todoItem,
+        done: !todoItem.done,
+      });
+      storage.save(this.todoItems);
     },
   },
   created() {
-    this.fetchTodoItems;
+    this.fetchTodoItems();
   },
 });
 </script>
